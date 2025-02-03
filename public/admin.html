@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración - Validar Docentes</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        table, th, td { border: 1px solid #ccc; }
+        th, td { padding: 8px; text-align: left; }
+        button { padding: 5px 10px; background-color: #28a745; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+
+    <h1>Lista de Docentes a Validar</h1>
+    <div id="error-message" class="error"></div>
+    <table id="teachers-table">
+        <thead>
+            <tr>
+                <th>Nombre de Usuario</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Aquí se llenarán los docentes pendientes -->
+        </tbody>
+    </table>
+
+    <script>
+        // Cargar la lista de docentes a validar
+        fetch('/admin/users')
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.querySelector('#teachers-table tbody');
+                data.forEach(teacher => {
+                    const row = document.createElement('tr');
+                    const cellUsername = document.createElement('td');
+                    cellUsername.textContent = teacher.username;
+                    const cellAction = document.createElement('td');
+                    const validateButton = document.createElement('button');
+                    validateButton.textContent = 'Validar';
+                    validateButton.onclick = () => validateTeacher(teacher.username);
+                    cellAction.appendChild(validateButton);
+                    row.appendChild(cellUsername);
+                    row.appendChild(cellAction);
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => {
+                document.getElementById('error-message').textContent = 'Error al cargar los docentes: ' + error.message;
+            });
+
+        // Función para validar al docente
+        function validateTeacher(username) {
+            fetch('/admin/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);  // Mensaje de éxito
+                    window.location.href = 'login.html';  // Redirigir a login después de la validación
+                }
+            })
+            .catch(error => {
+                alert('Error al validar el docente: ' + error.message);
+            });
+        }
+    </script>
+
+</body>
+</html>

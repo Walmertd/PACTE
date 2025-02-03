@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial de Certificados</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        .certificate-list {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .certificate-item {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .certificate-item:last-child {
+            border-bottom: none;
+        }
+        .download-btn {
+            background: #16a085;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        .download-btn:hover {
+            background: #13856b;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Historial de Certificados</h2>
+
+<div class="certificate-list" id="certificate-list">
+    <!-- Aquí se llenarán los certificados desde localStorage -->
+</div>
+
+<script>
+    function loadCertificates() {
+        const history = JSON.parse(localStorage.getItem('certificateHistory')) || [];
+        const listContainer = document.getElementById('certificate-list');
+        listContainer.innerHTML = '';
+
+        if (history.length === 0) {
+            listContainer.innerHTML = '<p style="text-align:center;">No hay certificados guardados.</p>';
+            return;
+        }
+
+        history.forEach((certificate, index) => {
+            const certificateItem = document.createElement('div');
+            certificateItem.classList.add('certificate-item');
+            certificateItem.innerHTML = `
+                <span>${index + 1}. ${certificate.recipientName} - ${certificate.courseName}</span>
+                <button class="download-btn" onclick="downloadCertificate(${index})">Descargar PDF</button>
+            `;
+            listContainer.appendChild(certificateItem);
+        });
+    }
+
+    function downloadCertificate(index) {
+        const history = JSON.parse(localStorage.getItem('certificateHistory')) || [];
+        if (!history[index]) return;
+
+        const certificate = history[index];
+
+        const certificateHTML = `
+            <div style="text-align:center; padding:20px; font-family: 'Arial', sans-serif;">
+                <h2 style="color:#2c3e50;">${certificate.header}</h2>
+                <h3 style="color:#e74c3c;">Certificado</h3>
+                <p>Se otorga a <strong style="font-size:24px;">${certificate.recipientName}</strong></p>
+                <p>Por haber completado el curso <strong>${certificate.courseName}</strong> con una duración de <strong>${certificate.courseDuration}</strong>.</p>
+                <p>Fecha de inicio: <strong>${certificate.startDate}</strong> - Fecha de finalización: <strong>${certificate.endDate}</strong></p>
+                <p><strong>Fecha de emisión:</strong> ${certificate.issueDate}</p>
+                <br>
+                <p><strong>Firma del Rector:</strong> ${certificate.rectorSignature}</p>
+                <p><strong>Firma del Coordinador:</strong> ${certificate.coordinatorSignature}</p>
+                <br>
+                <p style="font-size:12px; color:#34495e;">Hash: ${certificate.hash}</p>
+            </div>
+        `;
+
+        const pdfOptions = {
+            margin: 10,
+            filename: `Certificado_${certificate.recipientName}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().from(certificateHTML).set(pdfOptions).save();
+    }
+
+    function sendToCertificados() {
+        const history = JSON.parse(localStorage.getItem('certificateHistory')) || [];
+        const certificadosHTML = `
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Certificados Generados</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                    }
+                    h2 {
+                        color: #2c3e50;
+                    }
+                    .certificate-list {
+                        margin-top: 20px;
+                    }
+                    .certificate-item {
+                        padding: 10px;
+                        border-bottom: 1px solid #ddd;
+                        display: flex;
+                        justify-content: space-between;
+                    }
+                    .certificate-item:last-child {
+                        border-bottom: none;
+                    }
+                </style>
+            </head>
+            <body>
+                <h2>Certificados Generados</h2>
+                <div class="certificate-list">
+                    ${history.map((certificate, index) => `
+                        <div class="certificate-item">
+                            <span>${index + 1}. ${certificate.recipientName} - ${certificate.courseName}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </body>
+            </html>
+        `;
+
+        const blob = new Blob([certificadosHTML], { type: 'text/html' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'certificados.html';
+        link.click();
+
+        alert('Certificados enviados a certificados.html');
+    }
+
+    window.onload = loadCertificates;
+</script>
+
+<button onclick="sendToCertificados()" style="display: block; margin: 20px auto; padding: 10px 15px; background: #3498db; color: white; border: none; border-radius: 5px; cursor: pointer;">Enviar a Certificados</button>
+
+</body>
+</html>

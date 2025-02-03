@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios</title>
+    <style>
+        /* Los estilos se mantienen igual */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1e90ff;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input, select, button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #1e90ff;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: #104e8b;
+            box-shadow: 0 0 5px rgba(16, 78, 139, 0.5);
+        }
+
+        button {
+            background-color: #1e90ff;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #104e8b;
+        }
+
+        .message {
+            text-align: center;
+            color: red;
+            margin-bottom: 15px;
+        }
+
+        a {
+            color: #1e90ff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .toggle-form {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Gestión de Usuarios</h1>
+        <div class="message" id="message"></div>
+
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Usuario" required>
+            <input type="password" id="password" placeholder="Contraseña" required>
+            <button type="submit">Iniciar Sesión</button>
+        </form>
+
+        <form id="registerForm" style="display: none;">
+            <h1>Registro</h1>
+            <input type="text" id="regUsername" placeholder="Usuario" required>
+            <input type="password" id="regPassword" placeholder="Contraseña" required>
+            <select id="regRole">
+                <option value="teacher">Editor</option>
+                <option value="editor">Estudiante</option>
+            </select>
+            <button type="submit">Registrarse</button>
+        </form>
+
+        <div class="toggle-form">
+            <a href="javascript:void(0);" id="toggleLink">¿No tienes cuenta? Regístrate</a>
+        </div>
+    </div>
+
+    <script>
+        // Obtener la URL base del servidor
+        const API_URL = window.location.origin;
+
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+        const messageDiv = document.getElementById('message');
+        const toggleLink = document.getElementById('toggleLink');
+
+        // Verificar conexión con el servidor
+        async function checkServerConnection() {
+            try {
+                const response = await fetch(API_URL);
+                if (response.ok) {
+                    console.log('Conectado al servidor correctamente');
+                }
+            } catch (error) {
+                console.error('Error de conexión con el servidor:', error);
+                messageDiv.textContent = 'Error de conexión con el servidor';
+            }
+        }
+
+        // Ejecutar verificación al cargar la página
+        checkServerConnection();
+
+        // Alternar entre formularios
+        toggleLink.addEventListener('click', () => {
+            if (loginForm.style.display === 'none') {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+                toggleLink.textContent = '¿No tienes cuenta? Regístrate';
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                toggleLink.textContent = '¿Ya tienes cuenta? Inicia sesión';
+            }
+            messageDiv.textContent = '';
+        });
+
+        // Manejar inicio de sesión
+        loginForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password }),
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageDiv.style.color = 'green';
+                    messageDiv.textContent = result.message;
+
+                    // Guardar datos de sesión
+                    sessionStorage.setItem('userRole', result.role);
+                    sessionStorage.setItem('username', result.username);
+
+                    // Redirigir según el rol del usuario
+                    if (result.role === 'teacher') {
+                        window.location.href = '/edi.html';
+                    } else if (result.role === 'editor') {
+                        window.location.href = '/search.html';
+                    } else {
+                        alert('Bienvenido estudiante');
+                    }
+                } else {
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = result.message;
+                }
+            } catch (error) {
+                messageDiv.textContent = 'Error al conectar con el servidor';
+                console.error('Error:', error);
+            }
+        });
+
+        // Manejar registro de usuario
+        registerForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+            const role = document.getElementById('regRole').value;
+
+            try {
+                const response = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password, role }),
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    messageDiv.style.color = 'green';
+                    messageDiv.textContent = result.message;
+                    registerForm.reset();
+                    setTimeout(() => toggleLink.click(), 1500);
+                } else {
+                    messageDiv.style.color = 'red';
+                    messageDiv.textContent = result.message;
+                }
+            } catch (error) {
+                messageDiv.textContent = 'Error al conectar con el servidor';
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

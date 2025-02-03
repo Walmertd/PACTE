@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <a href="search.html" style="position:fixed; top:10px; right:20px; color:white; background:#3498db; padding:10px 15px; border-radius:5px; text-decoration:none;">Ver Certificados</a>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Certificados</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            height: 100vh;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #2c3e50;
+            padding: 20px;
+            color: white;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .options-group {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #34495e;
+            border-radius: 5px;
+            background-color: #34495e;
+        }
+
+        .options-group label {
+            font-size: 14px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .options-group input {
+            margin-bottom: 10px;
+            padding: 8px;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .certificate-container {
+            margin-left: auto;
+            margin-right: auto;
+            width: 287mm; /* Ancho del certificado */
+            height: 200mm; /* Alto del certificado */
+            padding: 10mm;
+            background-color: #fff;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .certificate-header {
+            font-size: 20px;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            color: #2c3e50;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .certificate-logo img {
+            max-width: 150px;
+            height: auto;
+        }
+
+        .certificate-title {
+            font-size: 36px;
+            color: #e74c3c;
+            margin: 30px 0;
+            text-transform: uppercase;
+        }
+
+        .certificate-body {
+            font-size: 20px;
+            line-height: 1.9;
+            color: #34495e;
+            margin: 10px 40px;
+        }
+
+        .recipient-name {
+            font-size: 28px;
+            font-weight: bold;
+            color: #16a085;
+            margin: 10px 0;
+            display: inline-block;
+            border-bottom: 2px solid #000;
+            padding-bottom: 5px;
+        }
+
+        .certificate-signatures {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 50px;
+        }
+
+        .signature-box {
+            text-align: center;
+        }
+
+        .signature-line {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .download-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #16a085;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .download-button:hover {
+            background-color: #13856b;
+        }
+
+        .certificate-hash {
+            font-size: 14px;
+            color: #34495e;
+            margin-top: 20px;
+            word-break: break-all;
+        }
+
+        #generate-hash {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        #generate-hash:hover {
+            background-color: #2980b9;
+        }
+
+        .history-group {
+            margin-top: 20px;
+        }
+
+        .history-group h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .history-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .history-list li {
+            background-color: #34495e;
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .history-list li:hover {
+            background-color: #3b536b;
+        }
+
+        .issue-date {
+            font-size: 18px;
+            color: #34495e;
+            margin-top: 10px;
+        }
+    </style>
+    <!-- Incluye la librería html2pdf.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Incluye la librería crypto-js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>Opciones de Edición</h2>
+
+        <div class="options-group">
+            <h3>Editar Encabezado</h3>
+            <label for="header-text">Texto del encabezado:</label>
+            <input type="text" id="header-text" value="SECRETARÍA DE EDUCACIÓN SUPERIOR DE CIENCIA, TECNOLOGÍA E INNOVACIÓN">
+            <label for="font-color">Color del texto:</label>
+            <input type="color" id="font-color" value="#2c3e50">
+        </div>
+
+        <div class="options-group">
+            <h3>Editar Logo</h3>
+            <label for="logo-file">Selecciona un logo:</label>
+            <input type="file" id="logo-file" accept="image/*">
+        </div>
+
+        <div class="options-group">
+            <h3>Editar Nombre</h3>
+            <label for="recipient-name-input">Nombre del recipiente:</label>
+            <input type="text" id="recipient-name-input" value="[Nombre del Recipiente]">
+        </div>
+
+        <div class="options-group">
+            <h3>Detalles del Curso</h3>
+            <label for="course-name">Nombre del curso:</label>
+            <input type="text" id="course-name" value="[Nombre del Curso]">
+            <label for="course-duration">Duración del curso:</label>
+            <input type="text" id="course-duration" value="[Duración del Curso]">
+        </div>
+
+        <div class="options-group">
+            <h3>Fechas del Curso</h3>
+            <label for="start-date">Fecha de inicio:</label>
+            <input type="date" id="start-date" value="2024-01-01">
+            <label for="end-date">Fecha de finalización:</label>
+            <input type="date" id="end-date" value="2024-12-31">
+        </div>
+
+        <div class="options-group">
+            <h3>Fecha de Emisión</h3>
+            <label for="issue-date">Fecha de emisión:</label>
+            <input type="date" id="issue-date" value="2024-01-01">
+        </div>
+
+        <div class="options-group">
+            <h3>Firma del Rector</h3>
+            <label for="rector-signature-input">Nombre del Rector:</label>
+            <input type="text" id="rector-signature-input" value="[Firma del Rector]">
+        </div>
+
+        <div class="options-group">
+            <h3>Firma del Coordinador</h3>
+            <label for="coordinator-signature-input">Nombre del Coordinador:</label>
+            <input type="text" id="coordinator-signature-input" value="[Firma del Coordinador]">
+        </div>
+
+        <div class="options-group">
+            <h3>Generar Hash</h3>
+            <label for="hash-output">Hash generado:</label>
+            <input type="text" id="hash-output" readonly>
+            <button id="generate-hash">Generar Hash</button>
+        </div>
+
+        <!-- Historial de certificados -->
+        <div class="history-group">
+            <h3>Historial de Certificados</h3>
+            <ul class="history-list" id="history-list"></ul>
+        </div>
+    </div>
+
+    <div class="certificate-container" id="certificate">
+        <div class="certificate-header" id="certificate-header">SECRETARÍA DE EDUCACIÓN SUPERIOR DE CIENCIA, TECNOLOGÍA E INNOVACIÓN</div>
+        <div class="certificate-logo">
+            <img id="certificate-logo" src="logo_lrg_text-1 (1).png" alt="Logo Instituto">
+        </div>
+        <div class="certificate-title">Certifica</div>
+        <div class="certificate-body">
+            <span class="recipient-name" id="recipient-name">[Nombre del Recipiente]</span><br>
+            Por haber aprobado el curso <strong id="course-name-text">[Nombre del Curso]</strong>, con una duración de
+            <strong id="course-duration-text">[Duración del Curso]</strong>, desarrolladas del
+            <strong id="start-date-text">[Fecha de Inicio]</strong> al <strong id="end-date-text">[Fecha de Finalización]</strong>.
+            <br><br>
+            <strong>Fecha de Emisión:</strong> <span id="issue-date-text" class="issue-date">[Fecha de Emisión]</span>
+        </div>
+
+        <div class="certificate-signatures">
+            <div class="signature-box">
+                <div class="signature-line" id="rector-signature-display">_________________________<br>Rector</div>
+            </div>
+
+            <div class="signature-box">
+                <div class="signature-line" id="coordinator-signature-display">_________________________<br>Coordinador</div>
+            </div>
+        </div>
+
+        <!-- Espacio para mostrar el hash en el certificado -->
+        <div class="certificate-hash">
+            <strong>Hash:</strong> <span id="certificate-hash-display"></span>
+        </div>
+    </div>
+
+    <button class="download-button" id="download-pdf">Descargar PDF</button>
+
+    <script>
+        // Función para guardar el certificado en el historial
+        function saveCertificate() {
+            const certificateData = {
+                header: document.getElementById('header-text').value,
+                recipientName: document.getElementById('recipient-name-input').value,
+                courseName: document.getElementById('course-name').value,
+                courseDuration: document.getElementById('course-duration').value,
+                startDate: document.getElementById('start-date').value,
+                endDate: document.getElementById('end-date').value,
+                issueDate: document.getElementById('issue-date').value, // Guardar la fecha de emisión
+                rectorSignature: document.getElementById('rector-signature-input').value,
+                coordinatorSignature: document.getElementById('coordinator-signature-input').value,
+                hash: document.getElementById('hash-output').value,
+            };
+
+            // Obtener el historial actual del localStorage
+            let history = JSON.parse(localStorage.getItem('certificateHistory')) || [];
+
+            // Agregar el nuevo certificado al historial
+            history.push(certificateData);
+
+            // Guardar el historial actualizado en el localStorage
+            localStorage.setItem('certificateHistory', JSON.stringify(history));
+
+            // Actualizar la lista del historial
+            updateHistoryList();
+        }
+
+        // Función para actualizar la lista del historial
+        function updateHistoryList() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = ''; // Limpiar la lista
+
+            // Obtener el historial del localStorage
+            const history = JSON.parse(localStorage.getItem('certificateHistory')) || [];
+
+            // Mostrar cada certificado en la lista
+            history.forEach((certificate, index) => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `Certificado ${index + 1} - ${certificate.recipientName}`;
+                listItem.addEventListener('click', () => loadCertificate(certificate));
+                historyList.appendChild(listItem);
+            });
+        }
+
+        // Función para cargar un certificado desde el historial
+        function loadCertificate(certificate) {
+            document.getElementById('header-text').value = certificate.header;
+            document.getElementById('certificate-header').textContent = certificate.header;
+
+            document.getElementById('recipient-name-input').value = certificate.recipientName;
+            document.getElementById('recipient-name').textContent = certificate.recipientName;
+
+            document.getElementById('course-name').value = certificate.courseName;
+            document.getElementById('course-name-text').textContent = certificate.courseName;
+
+            document.getElementById('course-duration').value = certificate.courseDuration;
+            document.getElementById('course-duration-text').textContent = certificate.courseDuration;
+
+            document.getElementById('start-date').value = certificate.startDate;
+            document.getElementById('start-date-text').textContent = certificate.startDate;
+
+            document.getElementById('end-date').value = certificate.endDate;
+            document.getElementById('end-date-text').textContent = certificate.endDate;
+
+            document.getElementById('issue-date').value = certificate.issueDate; // Cargar la fecha de emisión
+            document.getElementById('issue-date-text').textContent = certificate.issueDate;
+
+            document.getElementById('rector-signature-input').value = certificate.rectorSignature;
+            document.getElementById('rector-signature-display').innerHTML = "_________________________<br>" + certificate.rectorSignature;
+
+            document.getElementById('coordinator-signature-input').value = certificate.coordinatorSignature;
+            document.getElementById('coordinator-signature-display').innerHTML = "_________________________<br>" + certificate.coordinatorSignature;
+
+            document.getElementById('hash-output').value = certificate.hash;
+            document.getElementById('certificate-hash-display').textContent = certificate.hash;
+        }
+
+        // Función para generar el hash
+        function generateHash() {
+            // Obtén el contenido del certificado
+            const certificateContent = document.getElementById('certificate').innerText;
+
+            // Genera el hash usando SHA-256
+            const hash = CryptoJS.SHA256(certificateContent).toString(CryptoJS.enc.Hex);
+
+            // Muestra el hash en el campo de salida y en el certificado
+            document.getElementById('hash-output').value = hash;
+            document.getElementById('certificate-hash-display').textContent = hash;
+
+            // Guardar el certificado en el historial
+            saveCertificate();
+        }
+
+        // Función para actualizar el encabezado
+        document.getElementById('header-text').addEventListener('input', function () {
+            document.getElementById('certificate-header').textContent = this.value;
+        });
+
+        // Función para actualizar el color del texto del encabezado
+        document.getElementById('font-color').addEventListener('input', function () {
+            document.getElementById('certificate-header').style.color = this.value;
+        });
+
+        // Función para actualizar el logo
+        document.getElementById('logo-file').addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('certificate-logo').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Función para actualizar el nombre del recipiente
+        document.getElementById('recipient-name-input').addEventListener('input', function () {
+            document.getElementById('recipient-name').textContent = this.value;
+        });
+
+        // Función para actualizar el nombre del curso
+        document.getElementById('course-name').addEventListener('input', function () {
+            document.getElementById('course-name-text').textContent = this.value;
+        });
+
+        // Función para actualizar la duración del curso
+        document.getElementById('course-duration').addEventListener('input', function () {
+            document.getElementById('course-duration-text').textContent = this.value;
+        });
+
+        // Función para actualizar la fecha de inicio
+        document.getElementById('start-date').addEventListener('input', function () {
+            document.getElementById('start-date-text').textContent = this.value;
+        });
+
+        // Función para actualizar la fecha de finalización
+        document.getElementById('end-date').addEventListener('input', function () {
+            document.getElementById('end-date-text').textContent = this.value;
+        });
+
+        // Función para actualizar la fecha de emisión
+        document.getElementById('issue-date').addEventListener('input', function () {
+            document.getElementById('issue-date-text').textContent = this.value;
+        });
+
+        // Función para actualizar la firma del Rector
+        document.getElementById('rector-signature-input').addEventListener('input', function () {
+            document.getElementById('rector-signature-display').innerHTML = "_________________________<br>" + this.value;
+        });
+
+        // Función para actualizar la firma del Coordinador
+        document.getElementById('coordinator-signature-input').addEventListener('input', function () {
+            document.getElementById('coordinator-signature-display').innerHTML = "_________________________<br>" + this.value;
+        });
+
+        // Lógica para descargar el PDF
+        document.getElementById('download-pdf').addEventListener('click', function () {
+            const element = document.getElementById('certificate');
+            const options = {
+                margin: [10, 10], // Márgenes: [arriba/abajo, izquierda/derecha]
+                filename: 'certificado.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2, // Escala para mejorar la calidad
+                    useCORS: true, // Permitir imágenes externas
+                    logging: true, // Habilitar logs para depuración
+                },
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'landscape', // Orientación horizontal
+                },
+            };
+            html2pdf().from(element).set(options).save();
+        });
+
+        // Generar el hash cuando se hace clic en el botón
+        document.getElementById('generate-hash').addEventListener('click', generateHash);
+
+        // Cargar el historial al iniciar la página
+        updateHistoryList();
+    </script>
+</body>
+</html>
